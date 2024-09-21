@@ -2,56 +2,82 @@ from fasthtml.common import *
 
 app, rt = fast_app()
 
+
 @app.get('/')
 def homepage():
-    return Div(*[create_chat_message(**msg, msg_num=i) for i, msg in enumerate(example_messages)])
+    return Div(
+        # Importando Tailwind CSS
+        Link(rel="stylesheet",
+             href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"),
 
-def create_chat_message(role, content, msg_num):
-    if role == 'system': color = '#8B5CF6'
-    elif role == 'user': color = "#F000B8"
-    else: color = "#37CDBE"
-    text_color = '#1F2937'
+        # Estrutura principal
+        Div(
+            # Header
+            Div(
+                "Chat Telegram",
+                _class="bg-blue-500 text-white py-4 px-6 text-xl font-bold shadow-md"
+            ),
 
-    # msg 0 = left, msg 1 = right, msg 2 = left, etc.
-    alignment = 'flex-end' if msg_num % 2 == 1 else 'flex-start'
+            # Container de mensagens
+            Div(
+                id="chat-messages",
+                _class="flex-1 p-4 overflow-y-auto"
+            ),
 
-    message = Div(Div(
-            Div(# Shows the Role
-                Strong(role.capitalize()),
-                style=f"color: {text_color}; font-size: 0.9em; letter-spacing: 0.05em;"),
-            Div(# Shows content and applies font color to stuff other than syntax highlighting
-                Style(f".marked *:not(code):not([class^='hljs']) {{ color: {text_color} !important; }}"),
-                Div(content),
-                style=f"margin-top: 0.5em; color: {text_color} !important;"),
-            # extra styling to make things look better
-            style=f"""
-                margin-bottom: 1em; padding: 1em; border-radius: 24px; background-color: {color};
-                max-width: 70%; position: relative; color: {text_color} !important; """),
-        style=f"display: flex; justify-content: {alignment};")
+            # Container de input
+            Div(
+                Input(
+                    id="message-input",
+                    placeholder="Digite uma mensagem...",
+                    _class="w-full px-4 py-2 rounded-full border-2 border-gray-300 focus:outline-none focus:border-blue-500"
+                ),
+                Button(
+                    Span("➤", _class="transform rotate-90 inline-block"),
+                    id="send-button",
+                    _class="ml-2 bg-blue-500 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-blue-600 focus:outline-none"
+                ),
+                _class="bg-gray-100 p-4 flex items-center"
+            ),
+            _class="flex flex-col h-screen bg-gray-100"
+        ),
 
-    return message
+        Script("""
+            const chatMessages = document.getElementById('chat-messages');
+            const messageInput = document.getElementById('message-input');
+            const sendButton = document.getElementById('send-button');
 
-example_messages = [
-        {
-            "role": "system",
-            "content": "Hello, world!  I am a chatbot that can answer questions about the world.",
-        },
-        {
-            "role": "user",
-            "content": "I have always wondered why the sky is blue.  Can you tell me?",
-        },
-        {
-            "role": "assistant",
-            "content": "The sky is blue because of the atmosphere.  As white light passes through air molecules cause it to scatter.  Because of the wavelengths, blue light is scattered the most.",
-        },
-        {
-            "role": "user",
-            "content": "What is the meaning of life?",
-        },
-        {
-            "role": "assistant",
-            "content": "42 is the meaning of life.  It is the answer to the question of life, the universe, and everything.",
-        }
-    ]
+            function addMessage(content, isUser = true) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `max-w-[70%] rounded-lg p-3 mb-2 ${isUser ? 'ml-auto bg-green-200 text-right' : 'mr-auto bg-white'}`;
+                messageDiv.textContent = content;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function sendMessage() {
+                const message = messageInput.value.trim();
+                if (message) {
+                    addMessage(message, true);
+                    messageInput.value = '';
+                    
+                    // Simular resposta do assistente
+                    setTimeout(() => {
+                        addMessage('Obrigado pela sua mensagem! Como posso ajudar?', false);
+                    }, 1000);
+                }
+            }
+
+            sendButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // Adicionar mensagem inicial
+            addMessage('Bem-vindo ao chat! Este é um sistema de mensagens estilo Telegram usando Tailwind CSS.', false);
+        """)
+    )
+
 
 serve()
